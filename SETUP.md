@@ -1,21 +1,34 @@
-# Mauboussin AI Analyzer Setup
+# Mauboussin AI Analyzer
 
-## Required Configuration
+A professional AI-powered company analysis tool using Michael Mauboussin's investment frameworks.
 
-To use this application, you need to configure an Anthropic API key as a secret for the edge function.
+## Setup Complete
 
-### Setting up the Anthropic API Key
+The application is now fully configured with:
+- React + Vite frontend with Tailwind CSS
+- Supabase Edge Function for secure API calls
+- Beautiful gradient design with responsive layout
+
+## Important: API Key Required
+
+To make the app functional, you need to configure the Anthropic API key:
 
 1. Get your API key from [Anthropic Console](https://console.anthropic.com/)
-2. The edge function `analyze-company` needs the `ANTHROPIC_API_KEY` environment variable
+2. Configure the `ANTHROPIC_API_KEY` secret for the `analyze-company` edge function in your Supabase dashboard
+3. Once configured, the app will be able to analyze companies
 
-The edge function has been deployed and will work once the API key is configured.
+## Features
+
+- Competitive moat assessment across 5 dimensions
+- Expectations investing analysis
+- Probabilistic thinking and base rate analysis
+- Management quality evaluation
+- Export detailed reports
 
 ## How It Works
 
-The application uses:
-- **React** with **Vite** for the frontend
-- **Supabase Edge Function** to securely call the Anthropic API
-- **Claude AI** to analyze companies using Michael Mauboussin's investment frameworks
-
-The edge function handles the API calls to Anthropic, keeping your API key secure on the server side.
+1. User enters a company name
+2. Frontend calls the Supabase edge function
+3. Edge function securely calls Claude AI via Anthropic API
+4. AI analyzes the company using Mauboussin's frameworks
+5. Results displayed with interactive UI and export capability
