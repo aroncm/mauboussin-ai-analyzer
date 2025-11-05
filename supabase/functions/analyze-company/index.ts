@@ -46,8 +46,8 @@ Deno.serve(async (req: Request) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 16000,
+        model: "claude-3-5-sonnet-20240620",
+        max_tokens: 8192,
         messages: [
           {
             role: "user",
@@ -59,10 +59,18 @@ Deno.serve(async (req: Request) => {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("Anthropic API error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: `Analysis failed: ${response.status}`, details: errorText }),
+        JSON.stringify({
+          error: `Anthropic API error: ${response.status}`,
+          details: errorText,
+          requestInfo: {
+            model: "claude-3-5-sonnet-20240620",
+            maxTokens: 8192
+          }
+        }),
         {
-          status: response.status,
+          status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
