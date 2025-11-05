@@ -46,8 +46,8 @@ Deno.serve(async (req: Request) => {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-3-5-sonnet-20240620",
-        max_tokens: 8192,
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4096,
         messages: [
           {
             role: "user",
@@ -65,8 +65,8 @@ Deno.serve(async (req: Request) => {
           error: `Anthropic API error: ${response.status}`,
           details: errorText,
           requestInfo: {
-            model: "claude-3-5-sonnet-20240620",
-            maxTokens: 8192
+            model: "claude-3-5-sonnet-20241022",
+            maxTokens: 4096
           }
         }),
         {
