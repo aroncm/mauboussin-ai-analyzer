@@ -1,0 +1,149 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+};
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
+  }
+
+  try {
+    const { companyName } = await req.json();
+
+    if (!companyName) {
+      return new Response(
+        JSON.stringify({ error: "Company name is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!anthropicApiKey) {
+      return new Response(
+        JSON.stringify({ error: "API key not configured" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": anthropicApiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 16000,
+        messages: [
+          {
+            role: "user",
+            content: `You are a strategic analyst using Michael Mauboussin's investment frameworks. Analyze ${companyName} using the following structured format. Be rigorous, probabilistic, and intellectually honest.
+
+Your response MUST be valid JSON in this EXACT format (no additional text, no markdown, no code blocks):
+
+{
+  "companyName": "Official company name",
+  "businessModel": "2-3 sentence description of how the company makes money",
+  "industry": "Primary industry",
+  "moatAssessment": {
+    "supplyScale": {
+      "score": 1-5,
+      "assessment": "Detailed analysis with evidence"
+    },
+    "networkEffects": {
+      "score": 1-5,
+      "assessment": "Detailed analysis with evidence"
+    },
+    "switchingCosts": {
+      "score": 1-5,
+      "assessment": "Detailed analysis with evidence"
+    },
+    "intangibles": {
+      "score": 1-5,
+      "assessment": "Detailed analysis with evidence"
+    },
+    "costAdvantages": {
+      "score": 1-5,
+      "assessment": "Detailed analysis with evidence"
+    },
+    "overallRating": "Wide Moat / Narrow Moat / No Moat",
+    "trajectory": "Strengthening / Stable / Weakening",
+    "moatSummary": "2-3 sentences on overall competitive position"
+  },
+  "expectations": {
+    "currentValuation": "Brief valuation metrics (P/E, market cap, etc)",
+    "impliedExpectations": "What growth/margins/position is priced in?",
+    "upwardTriggers": "What could cause positive revision?",
+    "downwardTriggers": "What could cause negative revision?",
+    "valuationAssessment": "Is it priced for perfection or opportunity?"
+  },
+  "probabilistic": {
+    "baseRate": "What do historical statistics tell us about similar companies?",
+    "outcomeRange": "Bull/base/bear cases with rough probabilities",
+    "skillVsLuck": "How much is skill vs favorable circumstances?",
+    "keyUncertainties": "What are the major unknowns?"
+  },
+  "management": {
+    "capitalAllocation": "Track record of M&A, buybacks, reinvestment",
+    "strategicThinking": "Do they understand their moat? Long-term focus?",
+    "overallAssessment": "Summary of management quality"
+  },
+  "conclusion": {
+    "investmentThesis": "2-3 sentence thesis",
+    "keyRisks": "Primary risks to the thesis",
+    "whatWouldChange": "What would make you change your mind?",
+    "recommendation": "Context on whether this is attractive"
+  }
+}
+
+CRITICAL: Your response must be ONLY valid JSON. Do NOT include any text before or after the JSON. Do NOT use markdown code blocks. Do NOT include explanations. ONLY the raw JSON object.`,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return new Response(
+        JSON.stringify({ error: `Analysis failed: ${response.status}`, details: errorText }),
+        {
+          status: response.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const data = await response.json();
+    let responseText = data.content[0].text;
+
+    responseText = responseText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+    const analysisData = JSON.parse(responseText);
+
+    return new Response(JSON.stringify(analysisData), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: `Failed to analyze company: ${err.message}` }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+});
